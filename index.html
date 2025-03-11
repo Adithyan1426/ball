@@ -56,6 +56,15 @@
         <button onclick="checkAnswer()">Submit</button>
         <p class="message" id="message"></p>
     </div>
+    
+    <div id="puzzle-game" class="game-container" style="display: none;">
+        <h2>Mini Puzzle Game</h2>
+        <p>Rearrange the numbers in ascending order:</p>
+        <div id="puzzle-numbers"></div>
+        <button onclick="checkPuzzle()">Check</button>
+        <p id="puzzle-message"></p>
+    </div>
+    
     <script>
         let level = 1;
         let num1, num2, correctAnswer, operation;
@@ -70,6 +79,9 @@
         }
         
         function generateQuestion() {
+            document.getElementById("puzzle-game").style.display = "none";
+            document.querySelector(".game-container").style.display = "block";
+            
             clearInterval(timer);
             let timeLeft = 30;
             document.getElementById("timer").textContent = timeLeft;
@@ -115,7 +127,34 @@
         }
         
         function playMiniGame() {
-            alert("🎮 Mini Game Time! Click OK to continue.");
+            document.querySelector(".game-container").style.display = "none";
+            document.getElementById("puzzle-game").style.display = "block";
+            
+            let numbers = Array.from({ length: 5 }, () => Math.floor(Math.random() * 50) + 1);
+            let shuffledNumbers = [...numbers].sort(() => Math.random() - 0.5);
+            let puzzleContainer = document.getElementById("puzzle-numbers");
+            puzzleContainer.innerHTML = "";
+            shuffledNumbers.forEach(num => {
+                let span = document.createElement("span");
+                span.textContent = num;
+                span.style.margin = "5px";
+                span.style.padding = "10px";
+                span.style.backgroundColor = "#ddd";
+                span.style.cursor = "pointer";
+                span.onclick = () => span.remove();
+                puzzleContainer.appendChild(span);
+            });
+        }
+        
+        function checkPuzzle() {
+            let puzzleContainer = document.getElementById("puzzle-numbers");
+            let sortedNumbers = Array.from(puzzleContainer.children).map(span => parseInt(span.textContent)).sort((a, b) => a - b);
+            if (sortedNumbers.length === 5 && JSON.stringify(sortedNumbers) === JSON.stringify(sortedNumbers.sort((a, b) => a - b))) {
+                document.getElementById("puzzle-message").textContent = "🎉 Correct! Back to math questions!";
+                setTimeout(generateQuestion, 2000);
+            } else {
+                document.getElementById("puzzle-message").textContent = "❌ Try Again!";
+            }
         }
         
         function checkAnswer() {
@@ -127,6 +166,7 @@
                     level++;
                     if (level % 5 === 0) {
                         setTimeout(playMiniGame, 1000);
+                        return;
                     }
                 }
                 setTimeout(generateQuestion, 2000);
@@ -136,10 +176,6 @@
         }
         
         generateQuestion();
-    </script>
-</body>
-</html>
-generateQuestion();
     </script>
 </body>
 </html>
