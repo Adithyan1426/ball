@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catch the Ball Game</title>
+    <title>Cook the Meal Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,53 +11,169 @@
             background-color: #f8f8f8;
         }
         .game-container {
-            position: relative;
-            width: 400px;
-            height: 400px;
-            background: lightblue;
+            width: 500px;
             margin: auto;
-            border: 2px solid #000;
-            overflow: hidden;
+            background: #fff;
+            padding: 20px;
             border-radius: 10px;
-            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
         }
-        .ball {
-            width: 50px;
-            height: 50px;
-            background: red;
+        .ingredients {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .ingredient {
+            width: 80px;
+            height: 80px;
+            margin: 10px;
+            border: 2px solid #000;
+            border-radius: 10px;
+            cursor: grab;
+        }
+        #pot {
+            width: 150px;
+            height: 150px;
+            background: url('https://i.imgur.com/LVztPus.png') no-repeat center center;
+            background-size: cover;
             border-radius: 50%;
-            position: absolute;
-            cursor: pointer;
+            margin: auto;
+            position: relative;
+        }
+        #message {
+            font-size: 18px;
+            margin-top: 20px;
+            color: green;
+        }
+        #progress {
+            width: 100%;
+            height: 20px;
+            background: lightgray;
+            margin-top: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: green;
+        }
+        @keyframes boil {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        .boiling {
+            animation: boil 1s infinite;
         }
     </style>
 </head>
 <body>
-    <h1>Catch the Ball Game</h1>
-    <p>Click the moving ball to earn points!</p>
-    <h2>Score: <span id="score">0</span></h2>
-    <div class="game-container" id="game">
-        <div class="ball" id="ball"></div>
+
+    <h1>Cook the Meal Game 🍳</h1>
+    <p>Drag and drop the correct ingredients into the pot!</p>
+    <h2 id="level">Level 1</h2>
+    
+    <div class="game-container">
+        <div class="ingredients" id="ingredient-container">
+        </div>
+        <div id="pot" ondragover="allowDrop(event)" ondrop="drop(event)">
+            <p>Drop Here</p>
+        </div>
+        <div id="progress">
+            <div id="progress-bar"></div>
+        </div>
+        <p id="score">Score: 0</p>
+        <p id="message"></p>
+        <button onclick="nextLevel()">Next Level</button>
     </div>
 
     <script>
-        let score = 0;
-        const ball = document.getElementById("ball");
-        const gameContainer = document.getElementById("game");
+        let levels = [
+            { name: "Level 1", ingredients: ["tomato", "onion", "carrot"], correctOrder: ["tomato", "onion", "carrot"] },
+            { name: "Level 2", ingredients: ["egg", "cheese", "broccoli", "carrot"], correctOrder: ["carrot", "egg", "cheese", "broccoli"] },
+            { name: "Level 3", ingredients: ["tomato", "broccoli", "cheese", "onion", "egg"], correctOrder: ["tomato", "onion", "egg", "cheese", "broccoli"] }
+        ];
         
-        function moveBall() {
-            let x = Math.floor(Math.random() * (gameContainer.clientWidth - 50));
-            let y = Math.floor(Math.random() * (gameContainer.clientHeight - 50));
-            ball.style.left = x + "px";
-            ball.style.top = y + "px";
+        let currentLevel = 0;
+        let addedIngredients = [];
+        let score = 0;
+
+        function loadLevel() {
+            let level = levels[currentLevel];
+            document.getElementById("level").textContent = level.name;
+            let ingredientContainer = document.getElementById("ingredient-container");
+            ingredientContainer.innerHTML = "";
+            addedIngredients = [];
+            level.ingredients.forEach(ingredient => {
+                let img = document.createElement("img");
+                img.src = `https://i.imgur.com/b9zDbyb.png`;
+                img.className = "ingredient";
+                img.id = ingredient;
+                img.draggable = true;
+                img.addEventListener("dragstart", function(event) {
+                    event.dataTransfer.setData("text", event.target.id);
+                });
+                ingredientContainer.appendChild(img);
+            });
         }
         
-        ball.addEventListener("click", function() {
-            score++;
-            document.getElementById("score").textContent = score;
-            moveBall();
-        });
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            let ingredientId = event.dataTransfer.getData("text");
+            if (!addedIngredients.includes(ingredientId)) {
+                event.target.appendChild(document.getElementById(ingredientId));
+                addedIngredients.push(ingredientId);
+                document.getElementById("message").textContent = "Great! You added " + ingredientId + " to the pot!";
+                updateProgress();
+                playSound();
+                checkOrder();
+                score += 10;
+                document.getElementById("score").textContent = "Score: " + score;
+                document.getElementById("pot").classList.add("boiling");
+                setTimeout(() => document.getElementById("pot").classList.remove("boiling"), 1000);
+            }
+        }
+
+        function updateProgress() {
+            let progress = (addedIngredients.length / levels[currentLevel].correctOrder.length) * 100;
+            document.getElementById("progress-bar").style.width = progress + "%";
+        }
+
+        function checkOrder() {
+            if (addedIngredients.length === levels[currentLevel].correctOrder.length) {
+                if (JSON.stringify(addedIngredients) === JSON.stringify(levels[currentLevel].correctOrder)) {
+                    document.getElementById("message").textContent = "Perfect! You cooked the meal correctly!";
+                } else {
+                    document.getElementById("message").textContent = "Oops! The order is incorrect. Try again!";
+                    score -= 20;
+                    document.getElementById("score").textContent = "Score: " + score;
+                }
+            }
+        }
+
+        function nextLevel() {
+            if (currentLevel < levels.length - 1) {
+                currentLevel++;
+                loadLevel();
+                document.getElementById("message").textContent = "";
+            } else {
+                document.getElementById("message").textContent = "Congratulations! You completed all levels!";
+            }
+        }
+
+        function playSound() {
+            let audio = new Audio("https://www.fesliyanstudios.com/play-mp3/4389");
+            audio.play();
+        }
         
-        setInterval(moveBall, 1000);
+        loadLevel();
     </script>
+
 </body>
 </html>
