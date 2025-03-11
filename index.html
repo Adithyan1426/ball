@@ -57,13 +57,24 @@
     </div>
     <script>
         let level = 1;
-        let num1, num2, correctAnswer, operation;
+        let num1, num2, num3, correctAnswer, operation;
         
         function generateQuestion() {
             num1 = Math.floor(Math.random() * (level * 10)) + 1;
             num2 = Math.floor(Math.random() * (level * 10)) + 1;
-            let operations = ['+', '-', '*', '/'];
+            num3 = Math.floor(Math.random() * (level * 5)) + 1;
+            let operations = ['+', '-', '*', '/', '**', '%'];
             operation = operations[Math.floor(Math.random() * operations.length)];
+            
+            if (level > 10) {
+                num1 *= 2;
+                num2 *= 2;
+            }
+            if (level > 20) {
+                num1 *= 3;
+                num2 *= 3;
+                num3 *= 2;
+            }
             
             switch (operation) {
                 case '+':
@@ -79,11 +90,21 @@
                     num1 = num1 * num2;
                     correctAnswer = num1 / num2;
                     break;
+                case '**':
+                    correctAnswer = Math.pow(num1, num3);
+                    break;
+                case '%':
+                    correctAnswer = num1 % num2;
+                    break;
             }
             document.getElementById("question").textContent = `What is ${num1} ${operation} ${num2}?`;
             document.getElementById("message").textContent = "";
             document.getElementById("answer").value = "";
             document.getElementById("level").textContent = level;
+        }
+        
+        function playMiniGame() {
+            alert("🎮 Mini Game Time! Click OK to continue.");
         }
         
         function checkAnswer() {
@@ -92,6 +113,9 @@
                 document.getElementById("message").textContent = "🎉 Correct! Moving to next level! 🎉";
                 if (level < 100) {
                     level++;
+                    if (level % 5 === 0) {
+                        setTimeout(playMiniGame, 1000);
+                    }
                 }
                 setTimeout(generateQuestion, 2000);
             } else {
@@ -99,6 +123,11 @@
             }
         }
         
+        generateQuestion();
+    </script>
+</body>
+</html>
+
         generateQuestion();
     </script>
 </body>
