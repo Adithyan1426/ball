@@ -86,9 +86,6 @@
         <button class="btn-secondary" onclick="playMusic()">▶ Play Music</button>
         <button class="btn-secondary" onclick="pauseMusic()">⏸ Pause Music</button>
         <button class="btn-reset" onclick="resetGame()">🔄 Reset Game</button>
-        <p id="music-status">Music: Paused</p>
-        <label for="volume">Volume:</label>
-        <input type="range" id="volume" min="0" max="1" step="0.01" value="1" onchange="adjustVolume(this)">
         <p class="message" id="message"></p>
     </div>
 
@@ -134,12 +131,14 @@
         function checkAnswer() {
             let userAnswer = parseFloat(document.getElementById("answer").value);
             if (userAnswer === correctAnswer) {
-                document.getElementById("message").textContent = `🎉 Correct! +10 Points!`;
+                document.getElementById("message").textContent = "🎉 Congratulations! You got it right! +10 Points!";
+                document.getElementById("message").style.color = "green";  // Green for correct answers
                 score += 10;
                 streak++;
                 level++;
             } else {
-                document.getElementById("message").textContent = `❌ Wrong! Your Answer: ${userAnswer} | Correct Answer: ${correctAnswer}`;
+                document.getElementById("message").textContent = `❌ Oops! Wrong Answer! Your Answer: ${userAnswer} | Correct Answer: ${correctAnswer}`;
+                document.getElementById("message").style.color = "red";  // Red for incorrect answers
                 score = Math.max(0, score - 5);
                 streak = 0;
                 document.getElementById("retry-math").style.display = "block";
@@ -190,23 +189,14 @@
             generateQuestion();
         }
 
-        function playMusic() {
-            music.play();
-            document.getElementById("music-status").textContent = "Music: Playing";
-        }
+        function playMusic() { music.play(); }
+        function pauseMusic() { music.pause(); }
 
-        function pauseMusic() {
-            music.pause();
-            document.getElementById("music-status").textContent = "Music: Paused";
-        }
+        document.getElementById("high-score").textContent = highScore;
+        document.getElementById("level").textContent = level;
+        document.getElementById("score").textContent = score;
 
-        function adjustVolume(slider) {
-            music.volume = slider.value; // Adjust the music volume based on the slider.
-        }
-
-        window.onload = function() {
-            playMusic(); // Automatically starts the music when the page loads.
-        };
+        generateQuestion();
     </script>
 </body>
 </html>
