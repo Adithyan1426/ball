@@ -50,6 +50,7 @@
     <div class="game-container">
         <p>Level: <span id="level">1</span></p>
         <p class="question" id="question"></p>
+        <p>Time Left: <span id="timer">30</span> seconds</p>
         <input type="number" id="answer" placeholder="Your answer">
         <br>
         <button onclick="checkAnswer()">Submit</button>
@@ -57,24 +58,34 @@
     </div>
     <script>
         let level = 1;
-        let num1, num2, num3, correctAnswer, operation;
+        let num1, num2, correctAnswer, operation;
+        let timer;
+        
+        function gcd(a, b) {
+            return b == 0 ? a : gcd(b, a % b);
+        }
+        
+        function lcm(a, b) {
+            return (a * b) / gcd(a, b);
+        }
         
         function generateQuestion() {
+            clearInterval(timer);
+            let timeLeft = 30;
+            document.getElementById("timer").textContent = timeLeft;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById("timer").textContent = timeLeft;
+                if (timeLeft === 0) {
+                    clearInterval(timer);
+                    document.getElementById("message").textContent = "⏳ Time's up! Try again.";
+                }
+            }, 1000);
+            
             num1 = Math.floor(Math.random() * (level * 10)) + 1;
             num2 = Math.floor(Math.random() * (level * 10)) + 1;
-            num3 = Math.floor(Math.random() * (level * 5)) + 1;
-            let operations = ['+', '-', '*', '/', '**', '%'];
+            let operations = ['+', '-', '*', '/', 'LCM', 'HCF'];
             operation = operations[Math.floor(Math.random() * operations.length)];
-            
-            if (level > 10) {
-                num1 *= 2;
-                num2 *= 2;
-            }
-            if (level > 20) {
-                num1 *= 3;
-                num2 *= 3;
-                num3 *= 2;
-            }
             
             switch (operation) {
                 case '+':
@@ -90,11 +101,11 @@
                     num1 = num1 * num2;
                     correctAnswer = num1 / num2;
                     break;
-                case '**':
-                    correctAnswer = Math.pow(num1, num3);
+                case 'LCM':
+                    correctAnswer = lcm(num1, num2);
                     break;
-                case '%':
-                    correctAnswer = num1 % num2;
+                case 'HCF':
+                    correctAnswer = gcd(num1, num2);
                     break;
             }
             document.getElementById("question").textContent = `What is ${num1} ${operation} ${num2}?`;
@@ -111,6 +122,7 @@
             let userAnswer = parseFloat(document.getElementById("answer").value);
             if (userAnswer === correctAnswer) {
                 document.getElementById("message").textContent = "🎉 Correct! Moving to next level! 🎉";
+                clearInterval(timer);
                 if (level < 100) {
                     level++;
                     if (level % 5 === 0) {
@@ -127,8 +139,7 @@
     </script>
 </body>
 </html>
-
-        generateQuestion();
+generateQuestion();
     </script>
 </body>
 </html>
