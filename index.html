@@ -33,8 +33,6 @@
             font-size: 18px;
             margin-top: 10px;
             cursor: pointer;
-            background-color: #28a745;
-            color: white;
             border: none;
             border-radius: 5px;
         }
@@ -48,63 +46,84 @@
 <body>
     <h1>Math Problem Solving Game</h1>
     <div class="game-container" id="math-game">
-        <p>Level: <span id="level">1</span></p>
+        <p>Level: <span id="level">1</span> | Streak: <span id="streak">0</span> | High Score: <span id="high-score">0</span></p>
         <p class="question" id="question"></p>
         <p>Time Left: <span id="timer">30</span> seconds</p>
         <input type="number" id="answer" placeholder="Your answer">
         <br>
         <button onclick="checkAnswer()">Submit</button>
         <button onclick="generateQuestion()" id="retry-math" style="display: none;">Try Again</button>
+        <button onclick="toggleTimer()">Pause</button>
+        <button onclick="toggleMusic()">🎵 Play Music</button>
+        <button onclick="toggleSound()">🔊 Mute Sounds</button>
         <p class="message" id="message"></p>
     </div>
-    
+
+    <!-- Audio Elements -->
+    <audio id="bg-music" src="https://www.fesliyanstudios.com/play-mp3/6778" loop preload="auto"></audio>
+    <audio id="correct-sound" src="https://www.fesliyanstudios.com/play-mp3/387" preload="auto"></audio>
+    <audio id="wrong-sound" src="https://www.fesliyanstudios.com/play-mp3/391" preload="auto"></audio>
+    <audio id="timeup-sound" src="https://www.fesliyanstudios.com/play-mp3/395" preload="auto"></audio>
+
     <script>
         let level = localStorage.getItem("userLevel") ? parseInt(localStorage.getItem("userLevel")) : 1;
+        let highScore = localStorage.getItem("highScore") ? parseInt(localStorage.getItem("highScore")) : 1;
+        let streak = 0;
         let num1, num2, correctAnswer, operation;
-        let timer;
-        
+        let timer, timeLeft = 30;
+        let timerRunning = true;
+        let musicPlaying = false;
+        let soundEnabled = true;
+
         function gcd(a, b) {
             return b == 0 ? a : gcd(b, a % b);
         }
-        
+
         function lcm(a, b) {
             return (a * b) / gcd(a, b);
         }
-        
+
         function generateQuestion() {
             document.getElementById("retry-math").style.display = "none";
-
+            document.getElementById("message").textContent = "";
+            
             clearInterval(timer);
-            let timeLeft = 30;
+            timeLeft = 30;
             document.getElementById("timer").textContent = timeLeft;
+            timerRunning = true;
             timer = setInterval(() => {
-                timeLeft--;
-                document.getElementById("timer").textContent = timeLeft;
-                if (timeLeft === 0) {
-                    clearInterval(timer);
-                    document.getElementById("message").textContent = "⏳ Time's up! Try again.";
-                    document.getElementById("retry-math").style.display = "block";
+                if (timerRunning) {
+                    timeLeft--;
+                    document.getElementById("timer").textContent = timeLeft;
+                    if (timeLeft === 0) {
+                        clearInterval(timer);
+                        document.getElementById("message").textContent = "⏳ Time's up! Try again.";
+                        document.getElementById("retry-math").style.display = "block";
+                        if (soundEnabled) document.getElementById("timeup-sound").play();
+                        streak = 0;
+                        document.getElementById("streak").textContent = streak;
+                    }
                 }
             }, 1000);
-            
+
             num1 = Math.floor(Math.random() * (level * 10)) + 1;
             num2 = Math.floor(Math.random() * (level * 10)) + 1;
             let operations = ['+', '-', '*', '/', 'LCM', 'HCF'];
             operation = operations[Math.floor(Math.random() * operations.length)];
-            
+
             switch (operation) {
                 case '+':
                     correctAnswer = num1 + num2;
                     break;
                 case '-':
-                    if (num1 < num2) [num1, num2] = [num2, num1]; // Ensure non-negative result
+                    if (num1 < num2) [num1, num2] = [num2, num1];
                     correctAnswer = num1 - num2;
                     break;
                 case '*':
                     correctAnswer = num1 * num2;
                     break;
                 case '/':
-                    num1 = num1 * num2; // Ensure a whole number quotient
+                    num1 = num1 * num2;
                     correctAnswer = num1 / num2;
                     break;
                 case 'LCM':
@@ -115,32 +134,62 @@
                     break;
             }
             document.getElementById("question").textContent = `What is ${num1} ${operation} ${num2}?`;
-            document.getElementById("message").textContent = "";
             document.getElementById("answer").value = "";
             document.getElementById("level").textContent = level;
+            document.getElementById("high-score").textContent = highScore;
         }
-        
+
         function checkAnswer() {
             let userAnswer = parseFloat(document.getElementById("answer").value);
             if (userAnswer === correctAnswer) {
-                document.getElementById("message").textContent = "🎉 Correct! Moving to next level! 🎉";
+                document.getElementById("message").textContent = "🎉 Correct! Moving to next level!";
+                if (soundEnabled) document.getElementById("correct-sound").play();
                 clearInterval(timer);
                 
-                // Increment level by exactly 1
                 if (level < 100) {
                     level++;
                     localStorage.setItem("userLevel", level);
                 }
-
+                streak++;
+                if (level > highScore) {
+                    highScore = level;
+                    localStorage.setItem("highScore", highScore);
+                }
+                document.getElementById("streak").textContent = streak;
+                document.getElementById("high-score").textContent = highScore;
                 setTimeout(generateQuestion, 2000);
             } else {
                 document.getElementById("message").textContent = "❌ Wrong! Try again.";
+                if (soundEnabled) document.getElementById("wrong-sound").play();
                 document.getElementById("retry-math").style.display = "block";
+                streak = 0;
+                document.getElementById("streak").textContent = streak;
             }
+        }
+
+        function toggleTimer() {
+            timerRunning = !timerRunning;
+            document.querySelector("button[onclick='toggleTimer()']").textContent = timerRunning ? "Pause" : "Resume";
+        }
+
+        function toggleMusic() {
+            let music = document.getElementById("bg-music");
+            musicPlaying = !musicPlaying;
+            if (musicPlaying) {
+                music.play();
+                document.querySelector("button[onclick='toggleMusic()']").textContent = "⏸ Pause Music";
+            } else {
+                music.pause();
+                document.querySelector("button[onclick='toggleMusic()']").textContent = "🎵 Play Music";
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.querySelector("button[onclick='toggleSound()']").textContent = soundEnabled ? "🔊 Mute Sounds" : "🔈 Unmute Sounds";
         }
 
         generateQuestion();
     </script>
 </body>
 </html>
-
