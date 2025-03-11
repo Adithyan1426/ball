@@ -6,20 +6,24 @@
     <title>Math Problem Solving Game</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
             text-align: center;
-            background-color: #f8f8f8;
+            background: linear-gradient(135deg, #d3d3d3, #f0f0f0);
+            color: #333;
+            padding: 20px;
         }
         .game-container {
-            width: 400px;
+            width: 90%;
+            max-width: 400px;
             margin: auto;
-            background: #fff;
+            background: white;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
         .question {
-            font-size: 24px;
+            font-size: 26px;
+            font-weight: bold;
             margin: 20px 0;
         }
         input {
@@ -27,83 +31,82 @@
             font-size: 18px;
             width: 80px;
             text-align: center;
+            border: 2px solid #ff758c;
+            border-radius: 5px;
+            outline: none;
         }
         button {
-            padding: 10px 15px;
-            font-size: 18px;
-            margin-top: 10px;
-            cursor: pointer;
+            padding: 12px 20px;
+            font-size: 16px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            transition: 0.3s;
         }
+        button:hover {
+            transform: scale(1.05);
+            opacity: 0.8;
+        }
+        .btn-primary { background: #ff758c; color: white; }
+        .btn-secondary { background: #6a11cb; color: white; }
         .message {
             font-size: 20px;
             margin-top: 20px;
             font-weight: bold;
         }
         .scoreboard {
-            margin: 15px 0;
             font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .timer-bar {
+            height: 10px;
+            background: #ff758c;
+            width: 100%;
+            transition: width 1s linear;
         }
     </style>
 </head>
 <body>
-    <h1>Math Problem Solving Game</h1>
+    <h1>🔥 Math Challenge 🔥</h1>
     
     <div class="scoreboard">
         <p>🎯 <strong>Score:</strong> <span id="score">0</span> | 🔥 <strong>Streak:</strong> <span id="streak">0</span> | 🏆 <strong>High Score:</strong> <span id="high-score">0</span></p>
     </div>
-
-    <div class="game-container" id="math-game">
+    
+    <div class="game-container">
         <p>Level: <span id="level">1</span></p>
+        <div class="timer-bar" id="timer-bar"></div>
         <p class="question" id="question"></p>
-        <p>Time Left: <span id="timer">30</span> seconds</p>
         <input type="number" id="answer" placeholder="Your answer">
         <br>
-        <button onclick="checkAnswer()">Submit</button>
-        <button onclick="generateQuestion()" id="retry-math" style="display: none;">Try Again</button>
-        <button onclick="toggleMusic()">🎵 Toggle Music</button>
-        <button onclick="toggleSound()">🔊 Mute Sounds</button>
+        <button class="btn-primary" onclick="checkAnswer()">Submit</button>
+        <button class="btn-secondary" onclick="generateQuestion()" id="retry-math" style="display: none;">Try Again</button>
+        <button class="btn-secondary" onclick="playMusic()">▶ Play Music</button>
+        <button class="btn-secondary" onclick="pauseMusic()">⏸ Pause Music</button>
         <p class="message" id="message"></p>
     </div>
 
-    <!-- Audio Elements -->
     <audio id="bg-music" src="Interstellar.mp3" loop preload="auto"></audio>
-    <audio id="correct-sound" src="https://www.fesliyanstudios.com/play-mp3/387" preload="auto"></audio>
+  <audio id="correct-sound" src="https://www.fesliyanstudios.com/play-mp3/387" preload="auto"></audio>
     <audio id="wrong-sound" src="https://www.fesliyanstudios.com/play-mp3/391" preload="auto"></audio>
     <audio id="timeup-sound" src="https://www.fesliyanstudios.com/play-mp3/395" preload="auto"></audio>
 
     <script>
-        let level = localStorage.getItem("userLevel") ? parseInt(localStorage.getItem("userLevel")) : 1;
-        let highScore = localStorage.getItem("highScore") ? parseInt(localStorage.getItem("highScore")) : 0;
-        let score = 0, streak = 0;
-        let num1, num2, correctAnswer, operation;
-        let timer, timeLeft = 30;
-        let musicPlaying = false, soundEnabled = true;
-
+        let level = 1, score = 0, streak = 0, highScore = 0, timeLeft = 30;
+        let num1, num2, correctAnswer, operation, timer;
+        let music = document.getElementById("bg-music");
+        
         function gcd(a, b) { return b == 0 ? a : gcd(b, a % b); }
         function lcm(a, b) { return (a * b) / gcd(a, b); }
 
         function generateQuestion() {
+            clearInterval(timer);
             document.getElementById("retry-math").style.display = "none";
             document.getElementById("message").textContent = "";
-
-            clearInterval(timer);
             timeLeft = 30;
-            document.getElementById("timer").textContent = timeLeft;
-            timer = setInterval(() => {
-                timeLeft--;
-                document.getElementById("timer").textContent = timeLeft;
-                if (timeLeft === 0) {
-                    clearInterval(timer);
-                    document.getElementById("message").textContent = "⏳ Time's up! Try again.";
-                    document.getElementById("retry-math").style.display = "block";
-                    if (soundEnabled) document.getElementById("timeup-sound").play();
-                    streak = 0;
-                    updateScore(-5);
-                }
-            }, 1000);
-
+            updateTimerBar();
+            
             num1 = Math.floor(Math.random() * (level * 10)) + 1;
             num2 = Math.floor(Math.random() * (level * 10)) + 1;
             let operations = ['+', '-', '*', '/', 'LCM', 'HCF'];
@@ -119,50 +122,53 @@
             }
             document.getElementById("question").textContent = `What is ${num1} ${operation} ${num2}?`;
             document.getElementById("answer").value = "";
-            document.getElementById("level").textContent = level;
         }
 
         function checkAnswer() {
             let userAnswer = parseFloat(document.getElementById("answer").value);
             if (userAnswer === correctAnswer) {
                 document.getElementById("message").textContent = "🎉 Correct! +10 Points!";
-                if (soundEnabled) document.getElementById("correct-sound").play();
-                clearInterval(timer);
-                level++;
+                score += 10;
                 streak++;
-                updateScore(10);
-                setTimeout(generateQuestion, 2000);
+                level++;
             } else {
-                document.getElementById("message").textContent = "❌ Wrong! Try again.";
-                if (soundEnabled) document.getElementById("wrong-sound").play();
-                document.getElementById("retry-math").style.display = "block";
+                document.getElementById("message").textContent = "❌ Wrong! Try Again.";
+                score = Math.max(0, score - 5);
                 streak = 0;
-                updateScore(-5);
+                document.getElementById("retry-math").style.display = "block";
             }
+            updateScore();
+            generateQuestion();
         }
 
-        function updateScore(points) {
-            score += points;
-            if (score < 0) score = 0;
+        function updateTimerBar() {
+            let timerBar = document.getElementById("timer-bar");
+            timerBar.style.width = "100%";
+            timer = setInterval(() => {
+                timeLeft--;
+                timerBar.style.width = (timeLeft / 30) * 100 + "%";
+                if (timeLeft === 0) {
+                    clearInterval(timer);
+                    document.getElementById("message").textContent = "⏳ Time's up! Try again.";
+                    document.getElementById("retry-math").style.display = "block";
+                }
+            }, 1000);
+        }
+
+        function updateScore() {
             document.getElementById("score").textContent = score;
             document.getElementById("streak").textContent = streak;
+            document.getElementById("level").textContent = level;
             if (score > highScore) {
                 highScore = score;
-                localStorage.setItem("highScore", highScore);
+                document.getElementById("high-score").textContent = highScore;
             }
-            document.getElementById("high-score").textContent = highScore;
         }
 
-        function toggleMusic() {
-            let music = document.getElementById("bg-music");
-            musicPlaying = !musicPlaying;
-            musicPlaying ? music.play() : music.pause();
-        }
-
-        function toggleSound() { soundEnabled = !soundEnabled; }
+        function playMusic() { music.play(); }
+        function pauseMusic() { music.pause(); }
 
         generateQuestion();
     </script>
 </body>
 </html>
-
