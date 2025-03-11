@@ -68,7 +68,7 @@
     </div>
     
     <script>
-        let level = 1;
+        let level = localStorage.getItem("userLevel") ? parseInt(localStorage.getItem("userLevel")) : 1;
         let num1, num2, correctAnswer, operation;
         let timer;
         
@@ -137,6 +137,7 @@
                 clearInterval(timer);
                 if (level < 100) {
                     level++;
+                    localStorage.setItem("userLevel", level);
                     if (level % 5 === 0) {
                         setTimeout(playMiniGame, 1000);
                         return;
@@ -164,3 +165,4 @@
     </script>
 </body>
 </html>
+
