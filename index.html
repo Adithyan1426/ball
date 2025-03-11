@@ -58,15 +58,6 @@
         <p class="message" id="message"></p>
     </div>
     
-    <div id="puzzle-game" class="game-container" style="display: none;">
-        <h2>Mini Puzzle Game</h2>
-        <p>Rearrange the numbers in ascending order:</p>
-        <div id="puzzle-numbers"></div>
-        <button onclick="checkPuzzle()">Check</button>
-        <button onclick="playMiniGame()" id="retry-puzzle" style="display: none;">Try Again</button>
-        <p id="puzzle-message"></p>
-    </div>
-    
     <script>
         let level = localStorage.getItem("userLevel") ? parseInt(localStorage.getItem("userLevel")) : 1;
         let num1, num2, correctAnswer, operation;
@@ -81,10 +72,8 @@
         }
         
         function generateQuestion() {
-            document.getElementById("puzzle-game").style.display = "none";
-            document.getElementById("math-game").style.display = "block";
             document.getElementById("retry-math").style.display = "none";
-            
+
             clearInterval(timer);
             let timeLeft = 30;
             document.getElementById("timer").textContent = timeLeft;
@@ -108,13 +97,14 @@
                     correctAnswer = num1 + num2;
                     break;
                 case '-':
+                    if (num1 < num2) [num1, num2] = [num2, num1]; // Ensure non-negative result
                     correctAnswer = num1 - num2;
                     break;
                 case '*':
                     correctAnswer = num1 * num2;
                     break;
                 case '/':
-                    num1 = num1 * num2;
+                    num1 = num1 * num2; // Ensure a whole number quotient
                     correctAnswer = num1 / num2;
                     break;
                 case 'LCM':
@@ -135,32 +125,20 @@
             if (userAnswer === correctAnswer) {
                 document.getElementById("message").textContent = "🎉 Correct! Moving to next level! 🎉";
                 clearInterval(timer);
+                
+                // Increment level by exactly 1
                 if (level < 100) {
                     level++;
                     localStorage.setItem("userLevel", level);
-                    if (level % 5 === 0) {
-                        setTimeout(playMiniGame, 1000);
-                        return;
-                    }
                 }
+
                 setTimeout(generateQuestion, 2000);
             } else {
                 document.getElementById("message").textContent = "❌ Wrong! Try again.";
                 document.getElementById("retry-math").style.display = "block";
             }
         }
-        
-        function playMiniGame() {
-            document.getElementById("math-game").style.display = "none";
-            document.getElementById("puzzle-game").style.display = "block";
-            document.getElementById("retry-puzzle").style.display = "none";
-        }
-        
-        function checkPuzzle() {
-            document.getElementById("puzzle-message").textContent = "🎉 Correct! Back to math questions!";
-            setTimeout(generateQuestion, 2000);
-        }
-        
+
         generateQuestion();
     </script>
 </body>
