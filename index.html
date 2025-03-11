@@ -50,6 +50,7 @@
         }
         .btn-primary { background: #ff758c; color: white; }
         .btn-secondary { background: #6a11cb; color: white; }
+        .btn-reset { background: #ff3b3b; color: white; }
         .message {
             font-size: 20px;
             margin-top: 20px;
@@ -84,19 +85,20 @@
         <button class="btn-secondary" onclick="generateQuestion()" id="retry-math" style="display: none;">Try Again</button>
         <button class="btn-secondary" onclick="playMusic()">▶ Play Music</button>
         <button class="btn-secondary" onclick="pauseMusic()">⏸ Pause Music</button>
+        <button class="btn-reset" onclick="resetGame()">🔄 Reset Game</button>
         <p class="message" id="message"></p>
     </div>
 
     <audio id="bg-music" src="Interstellar.mp3" loop preload="auto"></audio>
-  <audio id="correct-sound" src="https://www.fesliyanstudios.com/play-mp3/387" preload="auto"></audio>
-    <audio id="wrong-sound" src="https://www.fesliyanstudios.com/play-mp3/391" preload="auto"></audio>
-    <audio id="timeup-sound" src="https://www.fesliyanstudios.com/play-mp3/395" preload="auto"></audio>
 
     <script>
-        let level = 1, score = 0, streak = 0, highScore = 0, timeLeft = 30;
-        let num1, num2, correctAnswer, operation, timer;
+        let level = localStorage.getItem("level") ? parseInt(localStorage.getItem("level")) : 1;
+        let score = localStorage.getItem("score") ? parseInt(localStorage.getItem("score")) : 0;
+        let highScore = localStorage.getItem("highScore") ? parseInt(localStorage.getItem("highScore")) : 0;
+        let streak = 0, timeLeft = 30, timer;
+        let num1, num2, correctAnswer, operation;
         let music = document.getElementById("bg-music");
-        
+
         function gcd(a, b) { return b == 0 ? a : gcd(b, a % b); }
         function lcm(a, b) { return (a * b) / gcd(a, b); }
 
@@ -106,7 +108,7 @@
             document.getElementById("message").textContent = "";
             timeLeft = 30;
             updateTimerBar();
-            
+
             num1 = Math.floor(Math.random() * (level * 10)) + 1;
             num2 = Math.floor(Math.random() * (level * 10)) + 1;
             let operations = ['+', '-', '*', '/', 'LCM', 'HCF'];
@@ -120,24 +122,30 @@
                 case 'LCM': correctAnswer = lcm(num1, num2); break;
                 case 'HCF': correctAnswer = gcd(num1, num2); break;
             }
+
             document.getElementById("question").textContent = `What is ${num1} ${operation} ${num2}?`;
             document.getElementById("answer").value = "";
+            document.getElementById("answer").focus();
         }
 
         function checkAnswer() {
             let userAnswer = parseFloat(document.getElementById("answer").value);
             if (userAnswer === correctAnswer) {
-                document.getElementById("message").textContent = "🎉 Correct! +10 Points!";
+                document.getElementById("message").textContent = "🎉 Congratulations! You got it right! +10 Points!";
+                document.getElementById("message").style.color = "green";  // Green for correct answers
                 score += 10;
                 streak++;
                 level++;
             } else {
-                document.getElementById("message").textContent = "❌ Wrong! Try Again.";
+                document.getElementById("message").textContent = `❌ Oops! Wrong Answer! Your Answer: ${userAnswer} | Correct Answer: ${correctAnswer}`;
+                document.getElementById("message").style.color = "red";  // Red for incorrect answers
                 score = Math.max(0, score - 5);
                 streak = 0;
                 document.getElementById("retry-math").style.display = "block";
             }
+
             updateScore();
+            saveProgress();
             generateQuestion();
         }
 
@@ -165,8 +173,28 @@
             }
         }
 
+        function saveProgress() {
+            localStorage.setItem("level", level);
+            localStorage.setItem("score", score);
+            localStorage.setItem("highScore", highScore);
+        }
+
+        function resetGame() {
+            localStorage.clear();
+            level = 1;
+            score = 0;
+            highScore = 0;
+            streak = 0;
+            updateScore();
+            generateQuestion();
+        }
+
         function playMusic() { music.play(); }
         function pauseMusic() { music.pause(); }
+
+        document.getElementById("high-score").textContent = highScore;
+        document.getElementById("level").textContent = level;
+        document.getElementById("score").textContent = score;
 
         generateQuestion();
     </script>
