@@ -33,8 +33,6 @@
             font-size: 18px;
             margin-top: 10px;
             cursor: pointer;
-            background-color: #28a745;
-            color: white;
             border: none;
             border-radius: 5px;
         }
@@ -43,24 +41,20 @@
             margin-top: 20px;
             font-weight: bold;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
+        .scoreboard {
+            margin: 15px 0;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
     <h1>Math Problem Solving Game</h1>
-    <button onclick="toggleMusic()">🎵 Play/Pause Music</button>
-    <div class="game-container">
+    
+    <div class="scoreboard">
+        <p>🎯 <strong>Score:</strong> <span id="score">0</span> | 🔥 <strong>Streak:</strong> <span id="streak">0</span> | 🏆 <strong>High Score:</strong> <span id="high-score">0</span></p>
+    </div>
+
+    <div class="game-container" id="math-game">
         <p>Level: <span id="level">1</span></p>
         <p class="question" id="question"></p>
         <p>Time Left: <span id="timer">30</span> seconds</p>
@@ -68,39 +62,34 @@
         <br>
         <button onclick="checkAnswer()">Submit</button>
         <button onclick="generateQuestion()" id="retry-math" style="display: none;">Try Again</button>
+        <button onclick="toggleMusic()">🎵 Toggle Music</button>
+        <button onclick="toggleSound()">🔊 Mute Sounds</button>
         <p class="message" id="message"></p>
     </div>
-    
-    <h2>Scoreboard</h2>
-    <table>
-        <tr>
-            <th>User</th>
-            <th>Score</th>
-        </tr>
-        <tbody id="scoreboard"></tbody>
-    </table>
-    
-    <audio id="background-music" loop>
-        <source src="Interstellar.mp3" type="audio/mp3">
-    </audio>
-    <audio id="correct-sound">
-        <source src="https://www.myinstants.com/media/sounds/tada.mp3" type="audio/mp3">
-    </audio>
-    <audio id="wrong-sound">
-        <source src="https://www.myinstants.com/media/sounds/wrong-answer.mp3" type="audio/mp3">
-    </audio>
-    <audio id="timeout-sound">
-        <source src="https://www.myinstants.com/media/sounds/times-up.mp3" type="audio/mp3">
-    </audio>
-    
+
+    <!-- Audio Elements -->
+    <audio id="bg-music" src="https://www.fesliyanstudios.com/play-mp3/6778" loop preload="auto"></audio>
+    <audio id="correct-sound" src="https://www.fesliyanstudios.com/play-mp3/387" preload="auto"></audio>
+    <audio id="wrong-sound" src="https://www.fesliyanstudios.com/play-mp3/391" preload="auto"></audio>
+    <audio id="timeup-sound" src="https://www.fesliyanstudios.com/play-mp3/395" preload="auto"></audio>
+
     <script>
         let level = localStorage.getItem("userLevel") ? parseInt(localStorage.getItem("userLevel")) : 1;
-        let score = 0;
-        let timer;
+        let highScore = localStorage.getItem("highScore") ? parseInt(localStorage.getItem("highScore")) : 0;
+        let score = 0, streak = 0;
+        let num1, num2, correctAnswer, operation;
+        let timer, timeLeft = 30;
+        let musicPlaying = false, soundEnabled = true;
+
+        function gcd(a, b) { return b == 0 ? a : gcd(b, a % b); }
+        function lcm(a, b) { return (a * b) / gcd(a, b); }
 
         function generateQuestion() {
+            document.getElementById("retry-math").style.display = "none";
+            document.getElementById("message").textContent = "";
+
             clearInterval(timer);
-            let timeLeft = 30;
+            timeLeft = 30;
             document.getElementById("timer").textContent = timeLeft;
             timer = setInterval(() => {
                 timeLeft--;
@@ -109,24 +98,26 @@
                     clearInterval(timer);
                     document.getElementById("message").textContent = "⏳ Time's up! Try again.";
                     document.getElementById("retry-math").style.display = "block";
-                    playTimeoutSound();
+                    if (soundEnabled) document.getElementById("timeup-sound").play();
+                    streak = 0;
+                    updateScore(-5);
                 }
             }, 1000);
 
-            let num1 = Math.floor(Math.random() * (level * 10)) + 1;
-            let num2 = Math.floor(Math.random() * (level * 10)) + 1;
-            let operations = ['+', '-', '*', '/'];
-            let operation = operations[Math.floor(Math.random() * operations.length)];
-            let correctAnswer;
+            num1 = Math.floor(Math.random() * (level * 10)) + 1;
+            num2 = Math.floor(Math.random() * (level * 10)) + 1;
+            let operations = ['+', '-', '*', '/', 'LCM', 'HCF'];
+            operation = operations[Math.floor(Math.random() * operations.length)];
 
             switch (operation) {
                 case '+': correctAnswer = num1 + num2; break;
-                case '-': correctAnswer = num1 - num2; break;
+                case '-': correctAnswer = Math.abs(num1 - num2); break;
                 case '*': correctAnswer = num1 * num2; break;
                 case '/': num1 = num1 * num2; correctAnswer = num1 / num2; break;
+                case 'LCM': correctAnswer = lcm(num1, num2); break;
+                case 'HCF': correctAnswer = gcd(num1, num2); break;
             }
             document.getElementById("question").textContent = `What is ${num1} ${operation} ${num2}?`;
-            document.getElementById("message").textContent = "";
             document.getElementById("answer").value = "";
             document.getElementById("level").textContent = level;
         }
@@ -134,37 +125,44 @@
         function checkAnswer() {
             let userAnswer = parseFloat(document.getElementById("answer").value);
             if (userAnswer === correctAnswer) {
-                document.getElementById("message").textContent = "🎉 Correct!";
+                document.getElementById("message").textContent = "🎉 Correct! +10 Points!";
+                if (soundEnabled) document.getElementById("correct-sound").play();
                 clearInterval(timer);
-                playCorrectSound();
-                score++;
-                updateScoreboard();
-                if (level < 100) level++;
-                localStorage.setItem("userLevel", level);
+                level++;
+                streak++;
+                updateScore(10);
                 setTimeout(generateQuestion, 2000);
             } else {
                 document.getElementById("message").textContent = "❌ Wrong! Try again.";
+                if (soundEnabled) document.getElementById("wrong-sound").play();
                 document.getElementById("retry-math").style.display = "block";
-                playWrongSound();
+                streak = 0;
+                updateScore(-5);
             }
         }
 
-        function updateScoreboard() {
-            let scoreboard = document.getElementById("scoreboard");
-            let row = scoreboard.insertRow();
-            row.insertCell(0).innerText = "User";
-            row.insertCell(1).innerText = score;
+        function updateScore(points) {
+            score += points;
+            if (score < 0) score = 0;
+            document.getElementById("score").textContent = score;
+            document.getElementById("streak").textContent = streak;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("highScore", highScore);
+            }
+            document.getElementById("high-score").textContent = highScore;
         }
 
-        function playCorrectSound() { document.getElementById("correct-sound").play(); }
-        function playWrongSound() { document.getElementById("wrong-sound").play(); }
-        function playTimeoutSound() { document.getElementById("timeout-sound").play(); }
-        function toggleMusic() { 
-            let music = document.getElementById("background-music");
-            music.paused ? music.play() : music.pause();
+        function toggleMusic() {
+            let music = document.getElementById("bg-music");
+            musicPlaying = !musicPlaying;
+            musicPlaying ? music.play() : music.pause();
         }
+
+        function toggleSound() { soundEnabled = !soundEnabled; }
 
         generateQuestion();
     </script>
 </body>
 </html>
+
