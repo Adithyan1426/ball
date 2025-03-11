@@ -48,6 +48,7 @@
 <body>
     <h1>Math Problem Solving Game</h1>
     <div class="game-container">
+        <p>Level: <span id="level">1</span></p>
         <p class="question" id="question"></p>
         <input type="number" id="answer" placeholder="Your answer">
         <br>
@@ -55,21 +56,43 @@
         <p class="message" id="message"></p>
     </div>
     <script>
-        let num1, num2, correctAnswer;
+        let level = 1;
+        let num1, num2, correctAnswer, operation;
         
         function generateQuestion() {
-            num1 = Math.floor(Math.random() * 10) + 1;
-            num2 = Math.floor(Math.random() * 10) + 1;
-            correctAnswer = num1 + num2;
-            document.getElementById("question").textContent = `What is ${num1} + ${num2}?`;
+            num1 = Math.floor(Math.random() * (level * 10)) + 1;
+            num2 = Math.floor(Math.random() * (level * 10)) + 1;
+            let operations = ['+', '-', '*', '/'];
+            operation = operations[Math.floor(Math.random() * operations.length)];
+            
+            switch (operation) {
+                case '+':
+                    correctAnswer = num1 + num2;
+                    break;
+                case '-':
+                    correctAnswer = num1 - num2;
+                    break;
+                case '*':
+                    correctAnswer = num1 * num2;
+                    break;
+                case '/':
+                    num1 = num1 * num2;
+                    correctAnswer = num1 / num2;
+                    break;
+            }
+            document.getElementById("question").textContent = `What is ${num1} ${operation} ${num2}?`;
             document.getElementById("message").textContent = "";
             document.getElementById("answer").value = "";
+            document.getElementById("level").textContent = level;
         }
         
         function checkAnswer() {
-            let userAnswer = parseInt(document.getElementById("answer").value);
+            let userAnswer = parseFloat(document.getElementById("answer").value);
             if (userAnswer === correctAnswer) {
-                document.getElementById("message").textContent = "🎉 Correct! Well done! 🎉";
+                document.getElementById("message").textContent = "🎉 Correct! Moving to next level! 🎉";
+                if (level < 100) {
+                    level++;
+                }
                 setTimeout(generateQuestion, 2000);
             } else {
                 document.getElementById("message").textContent = "❌ Wrong! Try again.";
